@@ -118,13 +118,13 @@ array_fre_t *find_free_array(chunk_t const *restrict chunks, ulong const msize) 
  * If there you find a suitable free array, turn it into a used one and return
  * If by the end of the chunk lists you've not found an array location, mmap a new chunk
  */
-void *alloc_array(ulong capacity, uchar const elsize) {
+void *alloc_array(ulong const capacity, uchar const elsize) {
 	if (!capacity || !elsize) return NULL;
 	array_fre_t *farr = find_free_array(chkdll_used, capacity*elsize);
 	if (!farr) farr = find_free_array(chkdll_free, capacity*elsize);
 	if (!farr) {
-		capacity += sizeof(array_dyn_t);
-		chunk_t *c = mmap_chunk(MAX(4, capacity/PGSZ + (capacity%PGSZ ? 1:0)) * PGSZ);
+		chunk_t *c = mmap_chunk(MAX(4, (capacity+sizeof(array_dyn_t))/PGSZ
+										+ ((capacity+sizeof(array_dyn_t))%PGSZ ? 1:0)) * PGSZ);
 		if (!c) return NULL;
 		chkdll_append(&chkdll_used, c);
 		farr = (void*)(c->bytes + c->sll_free);

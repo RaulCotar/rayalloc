@@ -2,10 +2,11 @@
 #include <string.h>
 #include <stdio.h>
 #include "../rayalloc.h"
+
 int main() {
 	char *buf = alloc_array(128, 1);
 	memcpy(buf, "Hello World!", 13);
 	puts(buf);
-	// memory leaks here (missing free)
+	// memory leaks here (missing free, pls implement)
 	return 0;
 }
