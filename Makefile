@@ -3,7 +3,7 @@
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
 CC := clang
-CFLAGS := $(shell cat compile_flags.txt|tr '\n' ' ')
+CFLAGS := $(shell tr '\n' ' ' <compile_flags.txt)
 TESTS := $(wildcard test/*.c)
 ifndef TEST_OUT_REDIR
 REDIR_FD = &1
