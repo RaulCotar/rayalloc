@@ -1,6 +1,7 @@
 RayAlloc-WIP
 ===
 Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, non-intrusive 2-in-1 library for memory allocation and dynamic arrays.
+Some of the old docs and files can offer more details about my \[old\] reasoning.
 
 
 ## Table of Contents
@@ -13,7 +14,7 @@ Insert explanation of how most allocations are arrays and how that leads to book
 
 
 ## Interface
-Well, so far there is none really, but the plan is to have the main interface be the array library part of rayalloc, with an optional header+library that you can include that provides the `malloc` interface (using the array one under the hood).
+Well, so far there is none really, but the plan is to have the main interface be the array library part of rayalloc, with an optional header+library that you can include that provides the `malloc` interface (using the array one under the hood). Check out [docs/interface.md](docs/interface.md).
 
 
 ## Building
@@ -64,4 +65,4 @@ Tests are built and run using make and simple bash commands. The first line of e
 	- if we want to be extra safe, we should have some intra-span linked list or sth, but that takes space and complexity
 	- I think the best is to have each array store its size and kind of form a liked list of offsets inside the span, maybe have the span header store a ptr to the first free array to speed up alloc search. A purposefully-crafted free call can allow the application to split an array, but that's acceptable since array overflows can already mess/merge arrays.
 	- to recap, the array solution from the previous version (chunks) can be slightly alterred and used here
-	- __RAUL README__: bc we have step sizes, aray sizes can be less bits! this way we can achieve more size-efficient arrays and 4B allignment (last one not a feature tho)
+	- __RAUL README__: bc we have step sizes, aray sizes can be less bits! this way we can have more size-efficient arrays and 4B alignment (last one not a feature tho)

@@ -21,6 +21,8 @@
  *  Spans can grow and shrink (using `mremap`) when more space is needed. They
  * do so in steps, fized sizes that are also used to select appropriate spans
  * for arrays based on their element size, capacity and growth hints.
+ *
+ *  To read more about the `tlcache` and `cgsl`, read rayalloc.c comments.
 */
 #ifndef _SPAN_H_
 #define _SPAN_H_
@@ -30,7 +32,7 @@
 struct span {
 	u64 header;
 	union {
-		u8 *data; // data if the header is not inlined
+		u8 *data; // data if the header is not inlined (tlcache)
 		struct span *next; // assuming CGSL: next span in CGSL, data is in bytes[]
 	};
 	u8 bytes[]; // data if the header is inlined
