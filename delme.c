@@ -5,6 +5,6 @@
 #include <stdio.h>
 
 int main() {
-	// nevermind
+	//nevermind
 	return 0;
 }

@@ -1,3 +1,8 @@
+
+
+// DEPRECATED !!!
+
+
 #ifndef _RAYALLOC_H_
 #define _RAYALLOC_H_
 
