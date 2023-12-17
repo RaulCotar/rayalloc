@@ -1,19 +1,18 @@
 #include "util.h"
+#include "config.h"
+#include "array.h"
 #include "span.h"
 
-#ifndef TLCACHE_SIZE
-	#define TLCACHE_SIZE 8
+#ifndef TLSL_SIZE
+	#define TLSL_SIZE 8
+#endif
+#ifndef TLAC_SIZE
+	#define TLAC_SIZE 15
 #endif
 
-/*  Thread Local Span Cache
- *  Stores a few external span headers for quicker lookups. 
- * Right now I have some conflicting statements: configurable cache size and
- * index=step. I like the first one a bit better, but I have an idea: the steps
- * wrap: index 8 = step 0 and so on. So until sth actually gets implemented,
- * this is what I'm running with in the docs.
-*/
-thread_static struct span tlcache[TLCACHE_SIZE]; // headers in here; index=step
-thread_static struct span *cgsl; // headers stored in-place
+thread_static struct span tlsl[TLSL_SIZE]; // external headers
+thread_static struct span *cgsl; // inline headers
+thread_static struct array_f *tlac[TLAC_SIZE];
 
 // alloc MVP
 // free MVP

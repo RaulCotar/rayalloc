@@ -1,38 +1,13 @@
-/*  What is a span?
- *
- *  A span is region of contiguous (virtual) memory that corresponds to one mmap
- * mapping. Spans hold the arrays that are allcoated by the application.
- *
- *  Each thread gets an array of 8(configurable) span headers that point to a
- * remote area in memory where the span's contents are. On top of that, the
- * Common Global Span List is a singly-linked list that holds more spans and is
- * shared between all threads. Note that this does not mean that the arrays they
- * contain are shared, it merely means that all threads know those spans exist.
- * Refer to the `struct span` definition for implementation details on the
- * "inline" and "external" span header styles (CGSL uses inline usually).
- *
- *  On the topic of threads sharing memory, they do it by sharing individual
- * arrays. Each time a thread wants to make changes to a shared span (not its
- * contents, but the hearder or memory map itself) it has to lock it. Something
- * similar happend for arrays: if a thread wans to access a shared array, it
- * first needs to acquire its respective lock. That being said, by default,
- * arrays are not shared by default, case in which no locks are invlved.
- *
- *  Spans can grow and shrink (using `mremap`) when more space is needed. They
- * do so in steps, fized sizes that are also used to select appropriate spans
- * for arrays based on their element size, capacity and growth hints.
- *
- *  To read more about the `tlcache` and `cgsl`, read rayalloc.c comments.
-*/
 #ifndef _SPAN_H_
 #define _SPAN_H_
 
 #include "util.h"
+#include "config.h"
 
 struct span {
 	u64 header;
 	union {
-		u8 *data; // data if the header is not inlined (tlcache)
+		u8 *data; // data if the header is not inlined (TLSL)
 		struct span *next; // assuming CGSL: next span in CGSL, data is in bytes[]
 	};
 	u8 bytes[]; // data if the header is inlined
@@ -40,12 +15,21 @@ struct span {
 	// span header bitmasks
 	#define M_SPAN_LOCK 0x1 // does this span require acquiring a lock before r/w?
 	#define M_SPAN_USED	0x2 // is this span used (false = completely free)?
-	#define M_SPAN_CGSL 0x4 // is this span part of the common global span dll?
+	#define M_SPAN_INLINE 0x4 // does this span have an inline header?
 	#define M_SPAN_HUGE 0x8 // is this span backed by hugepages?
 	#define M_SPAN_STEP 0x70 // step id, see table
-	#define M_SPAN_BIT8 0x80
-	#define M_SPAN_SIZE	0xffffff00 // total size of the span in bytes
-};
+	#define M_SPAN_MMAP 0x80 // is this span actually backed by (mmaped) memory?
+	#define M_SPAN_SIZE	0xffffffffffffff00 // total size of the span in bytes
+};	
+/* An all-zeros span struct has the following meaning:
+ * not locked
+ * not used (free)
+ * external header
+ * normal pages
+ * step0
+ * not backed
+ * zero-sized
+*/
 
 /* span step table
 _____________________
@@ -78,7 +62,7 @@ _____________________
 	#define SPAN_STEP_5 1024
 #endif
 #ifndef PAGE_SIZE
-	#define PAGE_SIZE 4096 // should prob use sysconf(_SC_PAGESIZE), but I'm lazy
+	#define PAGE_SIZE 4096
 #endif
 #define SPAN_STEP_6 PAGE_SIZE
 #define SPAN_STEP_7 0

@@ -1,11 +1,11 @@
-RayAlloc-WIP
+`RayAlloc` - WIP
 ===
 Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, non-intrusive 2-in-1 library for memory allocation and dynamic arrays.
-Some of the old docs and files can offer more details about my \[old\] reasoning.
+Check out the [docs folder](docs) for more in-depth information about the internals.
 
 
 ## Table of Contents
-1. [RayAlloc](#rayalloc-wip) . . . . . . . . . . . . . . . . . . . . . . . . . . . title section
+1. [RayAlloc](#rayalloc---wip) . . . . . . . . . . . . . . . . . . . . . . . . . title section
 1. [Interface](#interface) . . . . . . . . . . . . . . . . . . . . . . . . . . . API walkthrough
 1. [Building](#building) . . . . . . . . . . . . . . . . . . . . . . . . . . . . compilation guide
 1. [Testing](#testing) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . about automated tests
@@ -38,8 +38,8 @@ Tests are built and run using make and simple bash commands. The first line of e
 ## TODO: (see [the scratchpad](#scratchpad))
 - figure out the alloc and free algos
 	- write them down
-	- impleent them
-	- wite tests as you go
+	- implement them
+	- wite tests and docs as you go
 
 
 ## Scratchpad
@@ -59,10 +59,13 @@ Tests are built and run using make and simple bash commands. The first line of e
 	- ?put that span/array at the front of its respective list ?optimization
 	- return to application, we are done
 
-- free algo: (self-discussion)
-	- there is a problem: we need to locate where the hell the array the user gives us is, and if it is even an array at all!
-	- we could go through all the spans, look at their sizes and see if the address we have falls within one of them. Even then, what if the user fills the array with header-like data, and then tries to free an address somewhere in the middle of the array? And if that happens, does it leave the span in an inconsistent state though? If the half before the free point looks valid and we have no intra-span data struct that gets affected by this free, then no, the application has managed to split an array :) . 
-	- if we want to be extra safe, we should have some intra-span linked list or sth, but that takes space and complexity
-	- I think the best is to have each array store its size and kind of form a liked list of offsets inside the span, maybe have the span header store a ptr to the first free array to speed up alloc search. A purposefully-crafted free call can allow the application to split an array, but that's acceptable since array overflows can already mess/merge arrays.
-	- to recap, the array solution from the previous version (chunks) can be slightly alterred and used here
-	- __RAUL README__: bc we have step sizes, aray sizes can be less bits! this way we can have more size-efficient arrays and 4B alignment (last one not a feature tho)
+- free algo:
+	- we get an array address, and possibly some hints from the application
+	- we search all known spans (tlcache then cgsl) and using their address and size deduce whether or not the array belongs to one of them
+	- if the array cannot be located, throw a \[silent\] error and return
+	- go through the selected span, following the offset-based linked list of arrays, and check again that the array address we got is valid
+	- turn the selected array into a free one
+	- coalesce the new free array with any free neighbours and check if th whole span is now free (and mark is as such)
+	- we are done
+
+	On problem with the above algorithm is that we might be thrashing the cache sinc ewe do not take into account time/space locality between 2 or more allocations, nor a deallocation and an allocation. Solution: rename tlcache to tlsl (tl span list) and have a tlac (tl array cache) that has direct pointers to free arrays, arrays that have a flag set and a backpointer to know that they are part of the cache.
