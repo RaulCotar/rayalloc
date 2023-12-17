@@ -1,6 +1,6 @@
 `RayAlloc` - WIP
 ===
-Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, non-intrusive 2-in-1 library for memory allocation and dynamic arrays.
+Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, 2-in-1 library for memory allocation and dynamic arrays.
 Check out the [docs folder](docs) for more in-depth information about the internals.
 
 
@@ -42,7 +42,7 @@ Tests are built and run using make and simple bash commands. The first line of e
 	- wite tests and docs as you go
 
 
-## Scratchpad
+## Scratchpad (outdated)
 - alloc algo: (for span steps 0-5, steps 6,7 are exceptions)
 	- we get a size, some flags, and possibly some hints from the application
 	- we search for a span with a suitable step size:
