@@ -1,7 +1,7 @@
 #ifndef _ARRAY_H_
 #define _ARRAY_H_
 
-#include "util.h"
+#include "new/util.h"
 
 // non-managed array
 struct array_s {
@@ -11,7 +11,7 @@ struct array_s {
 
 	#define M_ARR_LOCK 0x1 // does this array require acquiring a lock before r/w?
 	#define M_ARR_USED 0x2 // is this span used (false = free)?
-	#define M_ARR_ELSZ 0xffc // element size (if managed); 0 means non managed
+	#define M_ARR_ELSZ 0xffc00000 // element size (if managed); 0 means non managed
 	// unfortunately, there are 20 unused bits in a non-free array header :(
 };
 
@@ -25,11 +25,12 @@ struct array_m {
 
 // free array
 struct array_f {
-	u32 header; // not the same as the normal array header!! use M_ARF_*
-	u32 size; // lower 32 bits of the array size (size in bytes)
+	u32 header; // same as for array_m; ELSZ!=0
+	u32 cap; // stopped in the middle of writing this
 	u32 next; // lower 32 bits of the offset to the next free array in the span
 	u32 backref1, backref2; // array_f **backref, but not aligned; iff BREF
 
+	// #define M_ARF_UNXT 0x0000ff
 	#define M_ARF_LOCK 0x1 // does this array require acquiring a lock before r/w?
 	#define M_ARF_USED 0x2 // always 0
 	#define M_ARF_BREF 0x4 // is there a backref? (iff array is free)
@@ -50,10 +51,10 @@ struct array_f {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wgnu-variable-sized-type-not-at-end"
-// generic array (sucky but nice for the API)
+// generic array (a bit sucky but nice for the API)
 union __attribute__ ((__transparent_union__)) array_g {
-	struct {struct array_s s; char _[4+8];};
-	struct {struct array_m m; char __[8];};
+	struct {struct array_s s; char $[4+8];};
+	struct {struct array_m m; char $$$[8];};
 	struct array_f f;
 };
 #pragma GCC diagnostic pop

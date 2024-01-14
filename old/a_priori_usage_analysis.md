@@ -36,6 +36,7 @@ I talked about how arrays are the main memory consumers. This provides a good op
 Something that would also be unseful is explicit allignments, usage hints, thread safety, some callbacks, and of course debugging and statistics (as compile/link-time options perhaps). 
 For the legacy interface, we can still use the same underlying data structures and treat `malloc`-ed areas as a byte array. Because of how `free` works, we might still need to store some form of header. Allignment might not actually be an issue here depending on how it ends up being handled in the new allocator. 
 One last thing, this library is not meant to be used for allocating hundreds of gigabytes of memory. This means that the implementation may pose some limitaions in terms of the maximum amounf of managed memory. As a rule of thumb, rayalloc should be able to manage at least 64GiB of memory.
+Another thing is (at least for strings and some other array-based data structures) that temporary arrays are something to keep in mind when designing a fast free algorithm.
 
 ## See also
 See [details.md](details.md) for some technical details, and the source files (they have comments ya know) for implementation details.

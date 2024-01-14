@@ -10,6 +10,9 @@ typedef int i32;
 typedef short i16;
 typedef char i8;
 
-#define thread_static static thread_local
+// my errno equivalent
+typedef i32 ierr;
+#define IERR_OK 0
+#define IERR_UNKNOWN -1
 
 #endif /* _UTIL_H_ */

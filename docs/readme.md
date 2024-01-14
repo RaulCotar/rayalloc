@@ -6,9 +6,9 @@ This file also contains an index of all the other files in the docs folder.
 
 
 ## Table of Contents
-1. [The Documentation](#the-documention) . . . . . . . . . . . . . . . . . . . . title section
-1. [Directory Index](#directory-index) . . . . . . . . . . . . . . . . . . . . . useful files
-1. [Data Structures](#data-structures) . . . . . . . . . . . . . . . . . . . . . important data structures
+1. [The Documentation](#the-documention) . . . . . . . . . . . . . . . . . . . . Title section
+1. [Directory Index](#directory-index) . . . . . . . . . . . . . . . . . . . . . Useful files
+1. [Data Structures](#data-structures) . . . . . . . . . . . . . . . . . . . . . Important data structures
 	1. [`span`](#span) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . Spans
 	1. [`array_s`](#array_s) . . . . . . . . . . . . . . . . . . . . . . . . . . Unmanaged arrays
 	1. [`array_m`](#array_m) . . . . . . . . . . . . . . . . . . . . . . . . . . Managed arrays
@@ -31,7 +31,7 @@ Spans can be shared with other threads by setting a header flag and using locks.
 Spans have "step sizes", fixed increments used to allocate array sizes. For more details on those check the code and the `SPAN_STEP_*` config macros.
 
 ### `tlsl`
-Defined in [rayalloc.c](../rayalloc.c), the "thread-local span list" is siply a C array of external span headers. Each thread gets a fxes number of them (see `TLSL_SIZE`). They act as the thread's primary source of spans, and are by default not shared. The array starts with all elements being non-backed spans (meaning that no memory is actually mapped) and they are mapped and expanded as needed. The first 8 spans have their step id equal to their index, the following spans have their step id set et runtime.
+Defined in [rayalloc.c](../rayalloc.c), the "thread-local span list" is siply a C array of external span headers. Each thread gets a fxed number of them (see `TLSL_SIZE`). They act as the thread's primary source of spans, and are by default not shared. The array starts with all elements being non-backed spans (meaning that no memory is actually mapped) and they are mapped and expanded as needed. The first 8 spans have their step id equal to their index, the following spans have their step id set at runtime.
 
 ### `cgsl`
 Defined in [rayalloc.c](../rayalloc.c), the "common global span list" is a singly-linked list of spans (with inline headers) that is shared by all threads. It starts empty and expands as more shared spans are created, either because the user requested some shared memory, or because the `tlsl` of the requesting thread is full.
