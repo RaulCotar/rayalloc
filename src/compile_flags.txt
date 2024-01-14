@@ -1,11 +1,10 @@
 -std=c2x
 -Wall
 -Wextra
--lpthread
--pthread
 -fpic
 -fno-omit-frame-pointer
 -fsanitize=undefined
 -fsanitize=address
 -O0
--D_RAYALLOC_INTERNALS
+-Iinclude
+-DNDEBUG

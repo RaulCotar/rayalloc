@@ -1,14 +1,14 @@
 #include "rayalloc.h"
-#include "array.h"
-#include "config.h"
 #include "util.h"
+#include "config.h"
+#include "array.h"
+#include "acache.h"
 #include <stdio.h>
 #define __USE_GNU // for mremap
 #include <sys/mman.h>
 
 thread_local void *_ray_map;
 thread_local u64 _ray_map_size; // in bytes
-thread_local ar_t *acache[ACACHE_SIZE]; // FIFO of most recent freed arrays
 
 #define blocks(VAL) ((((u64)VAL) + 15) / 16)
 #define arblocks(AR) blocks(((u64)((AR).cap)) * ((AR).flags>>16))
@@ -122,7 +122,7 @@ void rayfree(void *ptr) {
 	put_in_aacache((ar_t*)ar);
 }
 
-ierr map_map(u64 size_hint, int add_mmap_flags) {
+ierr raymap_map(u64 size_hint, int add_mmap_flags) {
 	if (_ray_map)
 		return IERR_OK;
 	_ray_map = mmap(NULL, size_hint?:PAGE_SIZE*64, PROT_READ|PROT_WRITE, add_mmap_flags|MAP_ANONYMOUS|((add_mmap_flags&MAP_SHARED || add_mmap_flags&MAP_SHARED_VALIDATE)?0:MAP_PRIVATE), -1, 0);
@@ -139,9 +139,9 @@ ierr map_map(u64 size_hint, int add_mmap_flags) {
 	return IERR_OK;
 }
 
-ierr map_resize(u64 new_size) {
+ierr raymap_resize(u64 new_size) {
 	if (!new_size)
-		return map_unmap();
+		return raymap_unmap();
 	void *new_map = mremap(_ray_map, _ray_map_size, new_size, 0);
 	if (new_map == MAP_FAILED) {
 		#if defined(DEBUG_MAP_RESIE) || !defined(NDEBUG)
@@ -154,7 +154,7 @@ ierr map_resize(u64 new_size) {
 	return IERR_OK;
 }
 
-ierr map_unmap(void) {
+ierr raymap_unmap(void) {
 	if (munmap(_ray_map, _ray_map_size)) {
 		#if defined(DEBUG_MAP_UNMAP) || !defined(NDEBUG)
 			perror(DBG_INTRO "map_unmap");

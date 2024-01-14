@@ -6,15 +6,15 @@
 extern thread_local void *_ray_map;
 extern thread_local u64 _ray_map_size; // in bytes
 
-ierr map_map(u64 size_hint, int add_mmap_flags);
+ierr raymap_map(u64 size_hint, int add_mmap_flags);
 
 void *rayalloc(u64 cap, u64 elsize, bool raw);
 
 void rayfree(void *ptr);
 
-ierr map_resize(u64 new_size);
+ierr raymap_resize(u64 new_size);
 
-ierr map_unmap(void);
+ierr raymap_unmap(void);
 
 void map_dbg_print(void);
 

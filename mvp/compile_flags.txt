@@ -1,9 +1,0 @@
--std=c2x
--Wall
--Wextra
--fpic
--fno-omit-frame-pointer
--fsanitize=undefined
--fsanitize=address
--O0
--DNDEBUG

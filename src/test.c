@@ -3,7 +3,7 @@
 
 int main() {
 	puts("\e[31mmap map--------------------------------------------------\e[39m");
-	map_map(0, 0);
+	raymap_map(0, 0);
 	map_dbg_print();
 
 	puts("\e[31mallocate str---------------------------------------------\e[39m");
@@ -46,7 +46,7 @@ int main() {
 	}
 
 	puts("\e[31mmap munmap-----------------------------------------------\e[39m");
-	map_unmap();
+	raymap_unmap();
 	putchar('\n');
 	return 0;
 }
