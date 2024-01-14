@@ -6,5 +6,5 @@
 -fsanitize=undefined
 -fsanitize=address
 -O0
--Iinclude
+-Isrc/include
 -DNDEBUG

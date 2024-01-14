@@ -13,14 +13,13 @@ Check out the [docs folder](docs) for more in-depth information about the intern
 
 
 ## Interface
-The interface has (will have rather) 2 parts: the main array interface and the "malloc" one. The later is separate (different header and lib) and is just a very thing wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. You can see the API so far:
+The interface has (will have rather) 2 parts: the main array interface and the "malloc" one. The later is separate (different header and lib) and is just a very thing wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
 function/object | description
 :--|:--
 `void *rayalloc(u64 cap, u64 elsize, bool raw)` | allocate a new array
 `void rayfree(void *ptr)` | deallocate an array
 `void *rayresize(void *ptr, u32 new_cap)` | not yet implemented
 `map_dbg_print(void)` | print debug information about the allocator
-`ierr raymap_*()` | `map`, `resize`, `unmap` the memory region used by allocator
 
 
 ## Cofiguration
@@ -37,8 +36,17 @@ Prerequisites:
 - `ar` for the static library (I use `GNU ar 2.41`)
 - a `bash`-compatible shell (I use `bash 5.2.21` and `zsh 5.9`)
 
-Makefile not yet in place yet. I use `clang *.c $(cat compile_flags.txt) -UNDEBUG`
+Relevant `make` targets:
+- `quicktest` - (default) Compile and run [test/_quick.c](test/_quick.c). Used to quickly and interactively test code changes.
+- `build/rayalloc.a` - Compile and achive the static library.
+- `runtest` - Phony target that compiles and runs all the tests (except [_quick.c](test/_quick.c)).
+
+Relevant output files:
+- [build/rayalloc.a](build/) - the static library
+- [src/include/rayalloc.h](src/include/rayalloc.h) - the user-facing header
+- [test/*.log](test/) - test results
 
 
 ## Testing
-I plan on having automated tests that can be run with a make target.
+Any `[^_]*.c` file in [test](./test) is treated as a test program. When its target is updated by Make, it is compiled and run, and its output is stored in a `*.log` file. Only the exit status of each test is printed during the `make runtest` command, so in case of errors you should check the logs.  
+Remember that [_quick.c](test/_quick.c) (note the leading underscore) is _not_ run together with the other tests during `runtest`.

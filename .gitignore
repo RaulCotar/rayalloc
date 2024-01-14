@@ -2,4 +2,5 @@
 *.a
 *.so
 *.bin
-delme
+*/delme
+build/*
