@@ -2,5 +2,6 @@
 *.a
 *.so
 *.bin
-*/delme
 build/*
+test/*.bin
+test/*.log

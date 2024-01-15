@@ -7,4 +7,5 @@
 -fsanitize=address
 -O0
 -Isrc/include
+-D_RAYALLOC_INTERNAL
 -DNDEBUG

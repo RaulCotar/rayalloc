@@ -9,9 +9,7 @@
 
 thread_local void *_ray_map;
 thread_local u64 _ray_map_size; // in bytes
-
-#define blocks(VAL) ((((u64)VAL) + 15) / 16)
-#define arblocks(AR) blocks(((u64)((AR).cap)) * ((AR).flags>>16))
+thread_local u64 _ray_arr_cnt; // total nr of arrays (including free)
 
 static void put_in_aacache(ar_t const *const ptr) {
 	#if defined(DEBUG_ACAHE) || !defined(NDEBUG)
@@ -53,6 +51,7 @@ static ar_t *coalesce_fwd(ar_t *from) {
 		for (u32 i=0; i<ACACHE_SIZE; i++)
 			if (acache[i] == (ar_t*)next)
 				acache[i] = NULL;
+		_ray_arr_cnt--;
 	}
 	return from;
 }
@@ -84,6 +83,7 @@ void *rayalloc(u64 cap, u64 elsize, bool raw) {
 			#endif
 			ar[1+abl] = (ar_t){16<<16, fbl-abl-1, 0, 0}; // bug: may overflow cap
 			put_in_aacache(ar+abl+1);
+			_ray_arr_cnt++;
 		}
 		*ar = (ar_t){AR_USED | (raw? AR_RAW:0) | elsize<<16, cap, 0, 0};
 		return ar->data;
@@ -136,6 +136,7 @@ ierr raymap_map(u64 size_hint, int add_mmap_flags) {
 	_ray_map_size = size_hint?:PAGE_SIZE*64;
 	*(ar_t*)_ray_map = (ar_t){16<<16, _ray_map_size/16-1, 0, 0}; // bug: may overflow cap
 	put_in_aacache(_ray_map);
+	_ray_arr_cnt = 1;
 	return IERR_OK;
 }
 
@@ -163,37 +164,6 @@ ierr raymap_unmap(void) {
 	}
 	_ray_map_size = 0;
 	_ray_map = NULL;
+	_ray_arr_cnt = 0;
 	return IERR_OK;
-}
-
-void map_dbg_print(void) {
-	if (!_ray_map) {
-		puts("_ray_map = NULL");
-		return;
-	}
-	printf("_ray_map = %p(incl) - %p(excl)\n_ray_map_size = %lu\n", _ray_map, _ray_map+_ray_map_size, _ray_map_size);
-	ar_t *ar= _ray_map;
-	while ((void*)ar < _ray_map+_ray_map_size && (void*)ar >= _ray_map) {
-		char color, *flags;
-		if (ar->flags & AR_USED) {
-			if (ar->flags & AR_RAW)
-				color = '5', flags = "UR";
-			else
-				color = '2', flags = "U";
-		}
-		else if (ar->flags & AR_RAW)
-			color = '1', flags = " R";
-		else
-			color = '6', flags = "";
-		printf("\e[3%cm%p [\e[1m%-2s\e[22m, elsize=%-3u, cap=%-5u, len=%-4u, ref=%-4u| blk=%lu+1 ]\e[39;49m\n",
-			color, ar, flags, ar->flags>>16, ar->cap, ar->len, ar->ref, arblocks(*ar));
-		if (ar_is_zeros(*ar)) {
-			u32 count=0;
-			while ((void*)(++ar) < _ray_map+_ray_map_size && (void*)ar >= _ray_map && ar_is_zeros(*ar))
-				count++;
-			printf("\t\e[36m...%u more all-zeros blocks...\e[39m\n", count);
-		}
-		else
-			ar += arblocks(*ar)+1;
-	}
 }

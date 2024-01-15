@@ -1,14 +1,16 @@
 #include <stdio.h>
+#include <sys/mman.h>
 #include "rayalloc.h"
+#include "raysnap.h"
 
 int main() {
 	puts("\e[31mmap map--------------------------------------------------\e[39m");
 	raymap_map(0, 0);
-	map_dbg_print();
+	raysnap_quickie(stdout);
 
 	puts("\e[31mallocate str---------------------------------------------\e[39m");
 	char *str = rayalloc(33, 1, false);
-	map_dbg_print();
+	raysnap_quickie(stdout);
 	if (!str) puts("str is NULL!");
 	else {
 		for (int i=0; i<13; i++)
@@ -18,7 +20,7 @@ int main() {
 
 	puts("\e[31mallocate str2-------------------------------------------\e[39m");
 	char *str2 = rayalloc(35, 1, false);
-	map_dbg_print();
+	raysnap_quickie(stdout);
 	if (!str2) puts("str2 is NULL!");
 	else {
 		for (int i=0; i<12; i++)
@@ -28,14 +30,15 @@ int main() {
 
 	puts("\e[31mfree str------------------------------------------------\e[39m");
 	rayfree(str);
-	map_dbg_print();
+	raysnap_quickie(stdout);
 
 	puts("\e[31mfree str2-----------------------------------------------\e[39m");
 	rayfree(str2);
-	map_dbg_print();
+	raysnap_quickie(stdout);
 
 	puts("\e[31mallocate str3--------------------------------------------\e[39m");
 	char *str3 = rayalloc(50, 1, false);
+	raysnap_quickie(stdout);
 	map_dbg_print();
 	if (!str3) puts("str3 is NULL!");
 	else {

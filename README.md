@@ -5,7 +5,7 @@ Check out the [docs folder](docs) for more in-depth information about the intern
 
 
 ## Table of Contents
-1. [RayAlloc](#rayalloc---wip) . . . . . . . . . . . . . . . . . . . . . . . . . . . title section
+1. [RayAlloc](#rayalloc---wip) . . . . . . . . . . . . . . . . . . . . . . . . . . title section
 1. [Interface](#interface) . . . . . . . . . . . . . . . . . . . . . . . . . . . API walkthrough
 1. [Configuration](#configuration) . . . . . . . . . . . . . . . . . . . . . . . macro config
 1. [Building](#building) . . . . . . . . . . . . . . . . . . . . . . . . . . . . compilation guide
@@ -13,7 +13,7 @@ Check out the [docs folder](docs) for more in-depth information about the intern
 
 
 ## Interface
-The interface has (will have rather) 2 parts: the main array interface and the "malloc" one. The later is separate (different header and lib) and is just a very thing wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
+The interface has 2 parts: the main array interface and the "malloc" one. The later is separate (different header) and is just a very thin wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
 function/object | description
 :--|:--
 `void *rayalloc(u64 cap, u64 elsize, bool raw)` | allocate a new array
@@ -23,17 +23,17 @@ function/object | description
 
 
 ## Cofiguration
-The file [`config.h`](./src/config.h) contains a series of macros that can be used to configure rayalloc. Compiler arguments take precedence over the defaults in [`config.h`](./src/config.h), so you can use `-D` flags instead of editing the file. Here is a list (non-comprehensive) of them:
-macro | description
+The file [`config.h`](./src/config.h) contains a series of macros that can be used to configure rayalloc. Compiler arguments take precedence over the defaults in [`config.h`](./src/config.h), so you can use `-D` flags instead of editing the file. Here is a non-comprehensive list of them:
+macro | default value | description
 :--|:--
-`ACACHE_SIZE` | number of entries in the thread local array cache
+`ACACHE_SIZE` | `8` | number of entries in the thread local array cache
 
 
 ## Building
 Prerequisites:
 - a __c2x-compatible__ C compiler (I use `clang 18.0.0git` and `gcc 13.2.1`)
 - a `GNU Make`-compatible program (I use `GNU Make 4.4.1`)
-- `ar` for the static library (I use `GNU ar 2.41`)
+- `ar` for archiving the static library (I use `GNU ar 2.41`)
 - a `bash`-compatible shell (I use `bash 5.2.21` and `zsh 5.9`)
 
 Relevant `make` targets:
@@ -42,9 +42,9 @@ Relevant `make` targets:
 - `runtest` - Phony target that compiles and runs all the tests (except [_quick.c](test/_quick.c)).
 
 Relevant output files:
-- [build/rayalloc.a](build/) - the static library
+- [build/rayalloc.a]() - the static library
 - [src/include/rayalloc.h](src/include/rayalloc.h) - the user-facing header
-- [test/*.log](test/) - test results
+- [test/*.log]() - test results
 
 
 ## Testing

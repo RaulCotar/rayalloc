@@ -30,8 +30,11 @@ test/%.log: test/%.c build/rayalloc.a
 build/rayalloc.a: $(OBJECTS)
 	ar rcs $@ $^
 
-build/%.o: src/%.c
+build/%.o: src/%.c | ./build
 	$(CC) $(CFLAGS) -c $^ -o $@
+
+./build:
+	mkdir $@
 
 .PHONY: clean
 clean:
