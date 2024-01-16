@@ -1,14 +1,16 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-typedef unsigned long u64;
-typedef unsigned int u32;
-typedef unsigned short u16;
-typedef unsigned char u8;
-typedef long i64;
-typedef int i32;
-typedef short i16;
-typedef char i8;
+#include <stdint.h>
+
+typedef uint64_t u64;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t u8;
+typedef int64_t i64;
+typedef int32_t i32;
+typedef int16_t i16;
+typedef int8_t i8;
 
 #ifndef NULL
 #define NULL nullptr
