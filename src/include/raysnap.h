@@ -13,7 +13,7 @@ typedef struct raysnap {
 	ar_t *acache[ACACHE_SIZE]; // = acache
 	u64 map_arcnt; // = _ray_arr_cnt
 	u64 ar_count; // counted arrays while going over map
-	ar_t arrays[];
+	ar_t arrays[/*ar_count*/]; // all array headers
 } raysnap_t;
 
 // go over the map and save a snapshot in a new mmap
@@ -27,8 +27,5 @@ void raysnap_csv(raysnap_t const *snap, void *file/* FILE* */);
 
 // combines _snapshot with _print and munmap for convenience
 void raysnap_quickie(void *file/* FILE* */);
-
-// The orginal debug print. Almost identical printout as raysnap_quickie.
-void map_dbg_print(void);
 
 #endif /* _RAYALLOC_SNAP_H_ */

@@ -37,14 +37,14 @@ int main() {
 	raysnap_quickie(stdout);
 
 	puts("\e[31mallocate str3--------------------------------------------\e[39m");
-	char *str3 = rayalloc(50, 1, false);
+	char *str3 = rayalloc(262100, 1, false);
 	raysnap_quickie(stdout);
 	map_dbg_print();
 	if (!str3) puts("str3 is NULL!");
 	else {
 		str3[0]=1;
 		for (int i=0; str3[i?i-1:0]; i++)
-			str3[i] = "This is a longer string."[i];
+			str3[i] = "This is a looooong string."[i];
 		puts(str3);
 	}
 

@@ -14,7 +14,7 @@
 #endif
 
 #ifndef ACACHE_SIZE
- #define ACACHE_SIZE 8
+ #define ACACHE_SIZE 16
 #endif
 
 #ifndef CANARY_VAL

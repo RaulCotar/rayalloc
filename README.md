@@ -13,20 +13,28 @@ Check out the [docs folder](docs) for more in-depth information about the intern
 
 
 ## Interface
-The interface has 2 parts: the main array interface and the "malloc" one. The later is separate (different header) and is just a very thin wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
-function/object | description
-:--|:--
-`void *rayalloc(u64 cap, u64 elsize, bool raw)` | allocate a new array
-`void rayfree(void *ptr)` | deallocate an array
-`void *rayresize(void *ptr, u32 new_cap)` | not yet implemented
-`map_dbg_print(void)` | print debug information about the allocator
-
+The interface has 3 parts: the main array interface, the "malloc" one and the debug and profiling stuff. The "malloc" interface is just a very thin wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
+function/object | header | description
+:--|:--|:--
+`void *rayalloc(u64 cap, u64 elsize, bool raw)` | [rayalloc.h](src/include/rayalloc.h) | allocate a new array
+`void rayfree(void *ptr)` | [rayalloc.h](src/include/rayalloc.h) | deallocate an array
+`void rayresize(void *ptr)` | [rayalloc.h](src/include/rayalloc.h) | resize a managed array (not implemented yet)
+`void map_dbg_print(void)` | [rayalloc.h](src/include/rayalloc.h) | debug print the state of the allocator, almost identical output to `raysnap_quickie`
+`ierr raymap_map(u64 size_hint, int add_mmap_flags)` | [raylloc.h](src/include/rayalloc.h) | initilize backing memory map
+`ierr raymap_resize(u64 new_size)` | [raylloc.h](src/include/rayalloc.h) | resize backing memory map
+`ierr raymap_unmap(void)` | [raylloc.h](src/include/rayalloc.h) | free backing memory map
+`raysnap_t *raysnap_snapshot(void)` | [raysnap.h](src/include/raysnap.h) | take a snapshot of the allocator state
+`void raysnap_print(raysnap_t const *ss, void *file)` | [raysnap.h](src/include/raysnap.h) | print a raysnap
+`void raysnap_csv(raysnap_t const *ss, void *file)` | [raysnap.h](src/include/raysnap.h) | serialize a raysnap to csv
+`void raysnap_quickie(void *file)` | [raysnap.h](src/include/raysnap.h) | snapshot+print combo, alsmot identical output to `map_print_dbg`
 
 ## Cofiguration
 The file [`config.h`](./src/config.h) contains a series of macros that can be used to configure rayalloc. Compiler arguments take precedence over the defaults in [`config.h`](./src/config.h), so you can use `-D` flags instead of editing the file. Here is a non-comprehensive list of them:
 macro | default value | description
-:--|:--
+:--|:--|:--
 `ACACHE_SIZE` | `8` | number of entries in the thread local array cache
+`BOUNDS_CHECKS` | undefined | enable supplementary bounds checking
+`NDEBUG` | undefined | disable debuging stuff
 
 
 ## Building
@@ -38,11 +46,11 @@ Prerequisites:
 
 Relevant `make` targets:
 - `quicktest` - (default) Compile and run [test/_quick.c](test/_quick.c). Used to quickly and interactively test code changes.
-- `build/rayalloc.a` - Compile and achive the static library.
+- `build/librayalloc.a` - Compile and achive the static library.
 - `runtest` - Phony target that compiles and runs all the tests (except [_quick.c](test/_quick.c)).
 
 Relevant output files:
-- [build/rayalloc.a]() - the static library
+- [build/librayalloc.a]() - the static library
 - [src/include/rayalloc.h](src/include/rayalloc.h) - the user-facing header
 - [test/*.log]() - test results
 

@@ -19,15 +19,14 @@ runtest: $(TEST_LOG)
 
 .PRECIOUS: $(TEST_LOG)
 .SILENT: $(TEST_LOG)
-test/%.log: test/%.c build/rayalloc.a
+test/%.log: test/%.c build/librayalloc.a
 	echo -ne 'Test \e[1m$*\e[22m ...'
-	sleep 1
 	$(CC) $(CFLAGS) $^ -o $(patsubst %.log,%.bin,$@)
 	./$(patsubst %.log,%.bin,$@) &>$@ \
 		&& (echo "exit code: $$?" &>>$@ && echo -e "\b\b\b\e[32m PASSED\e[39m") \
 		|| (echo "exit code: $$?" &>>$@ && echo -e "\b\b\b\e[31m FAILED\e[39m")
 
-build/rayalloc.a: $(OBJECTS)
+build/librayalloc.a: $(OBJECTS)
 	ar rcs $@ $^
 
 build/%.o: src/%.c | ./build

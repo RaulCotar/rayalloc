@@ -1,7 +1,7 @@
 TODO:
 ===
-- write [acache.c] and clean [rayalloc.c]
-- write more docs
+- update the API section in README
 - write some tests
-- figeure out a way to remove \<stdio.h\> depencency
 - clean up the code
+- transition to the DBG/BC system (also for #include stdio.h)
+- write more docs
