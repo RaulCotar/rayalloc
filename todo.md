@@ -1,12 +1,13 @@
 TODO:
 ===
-- find a way to reuse map printing - like small coroutines for memmap_t and ar_t with separate iteration logic for the 2 cases: map_dbg_print and raysnap_print
-- FILES NOT READY:
-	- [map.c] - `map_dbg_print`
-	- [raysnap.c] - all needs redoing
-	- [raymap.c] - all needs redoing
-- write some tests
+## For the next commit
+- complete `rayalloc` and `rayfree`
+- write a simple [_quick.c] to make sure no compilation errors
+## For after that
+- write tests and fix bugs
+- implement array and map resizing
 - update the API section in README
 - write more docs
+- have actual synchronization for `sh_map`
 
 ## Known bugs

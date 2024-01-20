@@ -6,11 +6,11 @@
 #define _CONFIG_H_
 
 #ifndef ACACHE_SIZE
-#define ACACHE_SIZE 16 // the main thing you'd want ot change in here
+#define ACACHE_SIZE 16
 #endif
 
 #ifndef PAGE_SIZE
-#define PAGE_SIZE 4096 // should prob use sysconf(_SC_PAGESIZE), but I'm lazy
+#define PAGE_SIZE 4096 // should prob use sysconf(_SC_PAGESIZE)
 #endif
 
 #ifndef HUGEPAGE_SIZE

@@ -2,9 +2,16 @@
 #include <sys/mman.h>
 #include "rayalloc.h"
 #include "map.h"
-#include "util.h"
 
-ar_t *coalesce_fwd(ar_t *from) {
+void *rayalloc(u64 capacity, u64 elem_size, i32 flags) {
+
+}
+
+void rayfree(void *ptr) {
+	
+}
+
+ar_f *coalesce_fwd(ar_f *from) {
 	memmap_t *map;
 	if (tl_map.ptr && (void*)from >= tl_map.ptr && (void*)from < tl_map.ptr + tl_map.size)
 		map = &tl_map;
@@ -14,12 +21,13 @@ ar_t *coalesce_fwd(ar_t *from) {
 		dloge("%p outside known map bounds!", from);
 		return from;
 	}
-	ar_t *next;
+	ar_f *next;
 	ifDBG(u32 cc = 0;)
 	while ((void*)(next = from+arblocks(*from)+1) < map->ptr+map->size && ar_is_free(*next)) {
-		u64 const tbsize = ar_bsize(*from) + ar_bsize(*next) + BS;
-		u32 const elsize = (tbsize + 1) * BS;
-		*from = (ar_t) {elsize << ESO, tbsize / elsize, .fref = NULL};
+		u64 const tbsize = ar_Bsize(*from) + ar_Bsize(*next) + BS;
+		u32 const elsize = tbsize / UINT32_MAX + 1;
+		from->flags = (elsize << ESO) | (from->flags & 0xffff);
+		from->cap = (tbsize - 1 + elsize) / elsize;
 		cache_remove(map, next);
 		ifDBG(cc++;)
 	}
@@ -27,7 +35,7 @@ ar_t *coalesce_fwd(ar_t *from) {
 	return from;
 }
 
-ierr ray_config(enum raycfg option, ...) {
+ierr ray_config(enum raycfg const option, ...) {
 	ierr ret = IERR_BADINPUT;
 	va_list va;
 	va_start(va, option);
@@ -89,17 +97,7 @@ ierr ray_config(enum raycfg option, ...) {
 		ret = IERR_OK;
 		break;
 
-	ifDBG(
-		case rayconf_tl_print:
-			map_dbg_print(&tl_map);
-			ret =IERR_OK;
-			break;
-
-		case rayconf_sh_print:
-			map_dbg_print(&sh_map);
-			ret =IERR_OK;
-			break;
-	)
+	// don't use default -> make sure all valid opts are handled
 	}
 	va_end(va);
 	return ret;

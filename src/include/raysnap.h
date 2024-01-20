@@ -9,7 +9,7 @@ struct raysnap {
 	u64 cache_cnt; // = ACACHE_SIZE
 	u64 ar_cnt; // counted arrays while going over map (should eq map.arr_cnt)
 	memmap_t map; // the map meta data, cache has cache_cnt entries
-	ar_t arrays[/*ar_count*/]; // all array headers
+	ar_any arrays[/*ar_count*/]; // all array headers
 };
 
 #endif /* _RAYSNAP_H_ */

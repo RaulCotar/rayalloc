@@ -16,17 +16,13 @@ enum raycfg {
 	rayconf_tl_unmap, // Return all thread-local memory to the OS
 	rayconf_sh_unmap, // Return all shared memory to the OS
 	rayconf_tl_ptr, // Get the address of the thread-local mem map. {void**}
-	rayconf_sh_ptr, // Get the address of the shared mem map. {void**}
-	ifDBG(
-		rayconf_tl_print, // Debug print, very similar ouput to raysnap_print.
-		rayconf_sh_print, // Debug print, very similar ouput to raysnap_print.
-	)
+	rayconf_sh_ptr // Get the address of the shared mem map. {void**}
 };
 
 // Get or set allocator options. Includes debug printing in debug builds.
-ierr ray_config(enum raycfg option, ...);
+ierr ray_config(enum raycfg const option, ...);
 
-#define RA_AR_RAW 0x2 // raw array => don't keep track of len and ref
+#define RA_AR_RAW 0x3 // raw array => don't keep track of len and ref
 #define RA_AR_CIRC 0x4 // circular array => basically ring buffers
 #define RA_AR_DIRTY 0x10 // don't zero the memory
 

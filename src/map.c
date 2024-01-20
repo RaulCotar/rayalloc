@@ -2,7 +2,6 @@
 #include <errno.h>
 #include "map.h"
 #include "config.h"
-#include "printing.h"
 
 ierr map_map(memmap_t *const restrict map, u64 size, u64 Msize, int mf) {
 	if (map->ptr) {
@@ -22,15 +21,8 @@ ierr map_map(memmap_t *const restrict map, u64 size, u64 Msize, int mf) {
 	}
 	*map = (memmap_t) {map->ptr, size, Msize, 1, {map->ptr}};
 	u16 const elsize = size / UINT32_MAX + 1;
-	*(ar_t*)map->ptr = (ar_t) {elsize<<ESO, (size-1+elsize)/elsize, .fref=NULL};
+	*(ar_f*)map->ptr = (ar_f) {elsize<<ESO, (size-1+elsize)/elsize, NULL};
 	return IERR_OK;
-}
-
-ierr map_remap(memmap_t *const restrict map, u64 size) {
-	(void)map;
-	(void)size;
-	dloge("remap unimplemented");
-	return IERR_UNKNOWN;
 }
 
 ierr map_unmap(memmap_t *const restrict map) {
@@ -42,11 +34,13 @@ ierr map_unmap(memmap_t *const restrict map) {
 		dloge("munmap failed with errno %d", errno);
 		return IERR_CANTUNMAP;
 	}
-	*map = (memmap_t) {NULL, 0, 0, 0, {0}};
+	*map = (memmap_t) {NULL, 0, 0, 0, {}};
+	for (i32 i=0; i<ACACHE_SIZE; i++)
+		map->cache[i] = NULL;
 	return IERR_OK;
 }
 
-void cache_append(memmap_t *const restrict map, ar_t const *ar) {
+void cache_append(memmap_t *const restrict map, ar_f const *ar) {
 	ifDBG(
 		if ((void*)ar >= map->ptr+map->size || (void*)ar < map->ptr)
 			dlogw("%p out of bounds!", ar); // note: NULL is always out of bounds
@@ -58,10 +52,10 @@ void cache_append(memmap_t *const restrict map, ar_t const *ar) {
 	while (i < ACACHE_SIZE && map->cache[i++]);
 	while (--i)
 		map->cache[i] = map->cache[i-1];
-	map->cache[0] = (ar_t*)ar;
+	map->cache[0] = (ar_f*)ar;
 }
 
-void cache_remove(memmap_t *const restrict map, ar_t const *ar) {
+void cache_remove(memmap_t *const restrict map, ar_f const *ar) {
 	ifDBG(
 		if (!ar)
 			dlogw("array is NULL!");
@@ -77,7 +71,7 @@ void cache_remove(memmap_t *const restrict map, ar_t const *ar) {
 		}
 }
 
-void cache_replace(memmap_t *const restrict map, ar_t const *old, ar_t const *new) {
+void cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *new) {
 	ifDBG(
 		if ((void*)new >= map->ptr+map->size || (void*)new < map->ptr)
 			dlogw("%p (new) out of bounds!", new);
@@ -94,21 +88,8 @@ void cache_replace(memmap_t *const restrict map, ar_t const *old, ar_t const *ne
 		if (map->cache[i++] == old) {
 			while (--i)
 				map->cache[i] = map->cache[i-1];
-			map->cache[0] = (ar_t*)new;
+			map->cache[0] = (ar_f*)new;
 			return;
 		}
 	dlogm("%p (old) was not found, %p (new) was not inserted", old ,new);
 }
-
-ifDBG(
-void map_dbg_print(const memmap_t *const map) {
-	u64 arr_cnt = 0;
-	ar_t *ar = map->ptr;
-	while ((void*)ar < map->ptr+map->size && (void*)ar >= map->ptr) {
-		_print_ar(ar, ar, map, ACACHE_SIZE, stderr);
-		arr_cnt++;
-	}
-	_print_memmap(map, arr_cnt, stderr);
-	_print_acache(map, ACACHE_SIZE, stderr);
-}
-)

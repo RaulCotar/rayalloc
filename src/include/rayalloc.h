@@ -4,8 +4,8 @@
 #include "api/rayalloc.h" // IWYU pragma: export
 #include "array.h"
 
-// internal array allocation functions
+// here put internal functions
 
-ar_t *coalesce_fwd(ar_t *from);
+ar_f *coalesce_fwd(ar_f *from);
 
 #endif /* _RAYALLOC_H_ */

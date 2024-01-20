@@ -9,24 +9,6 @@
 thread_local void *_ray_map;
 thread_local u64 _ray_map_size; // in bytes
 thread_local u64 _ray_arr_cnt; // total nr of arrays (including free)
-thread_local bool _ray_isinit;
-
-ar_t *coalesce_fwd(ar_t *from) {
-	printf("called to coalesce from %p\n", from);
-	ar_t *next;
-	while ((void*)(next = from+arblocks(*from)+1) < _ray_map+_ray_map_size
-			&& !((next)->flags & AR_USED)) {
-		#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-			printf("coalesce_fwd: coalescing %p with %p\n", from, next);
-		#endif
-		*from = (ar_t){16<<16, ((from->flags>>16) * from->cap + (next->flags>>16) * next->cap) / 16 + 1, 0, 0};
-		for (u32 i=0; i<ACACHE_SIZE; i++)
-			if (acache[i] == (ar_t*)next)
-				acache[i] = NULL;
-		_ray_arr_cnt--;
-	}
-	return from;
-}
 
 void *rayalloc(u64 cap, u64 elsize, bool raw) {
 	if (!elsize)
