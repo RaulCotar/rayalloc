@@ -1,10 +1,12 @@
 -std=c2x
 -Wall
 -Wextra
+-Wno-gnu-zero-variadic-macro-arguments
+-Wno-gnu-pointer-arith
 -fpic
 -fno-omit-frame-pointer
 -fsanitize=undefined
 -fsanitize=address
--O0
+-Og
+-g3
 -Isrc/include
--D_RAYALLOC_INTERNAL

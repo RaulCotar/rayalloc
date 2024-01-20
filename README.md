@@ -1,4 +1,4 @@
-`RayAlloc` - WIP
+RayAlloc - WIP
 ===
 Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, 2-in-1 library for memory allocation and dynamic arrays writen in C2X.
 Check out the [docs folder](docs) for more in-depth information about the internals. See the [todo list](./todo.md) if you are interested in the near-future plans.

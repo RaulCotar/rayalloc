@@ -1,205 +1,106 @@
-#include "rayalloc.h"
-#include "util.h"
-#include "config.h"
-#include "acache.h"
-#include <stdio.h>
-#define __USE_GNU // for mremap
+#include <stdarg.h>
 #include <sys/mman.h>
-
-thread_local void *_ray_map;
-thread_local u64 _ray_map_size; // in bytes
-thread_local u64 _ray_arr_cnt; // total nr of arrays (including free)
-thread_local bool _ray_isinit;
+#include "rayalloc.h"
+#include "map.h"
+#include "util.h"
 
 ar_t *coalesce_fwd(ar_t *from) {
-	printf("called to coalesce from %p\n", from);
-	ar_t *next;
-	while ((void*)(next = from+arblocks(*from)+1) < _ray_map+_ray_map_size
-			&& !((next)->flags & AR_USED)) {
-		#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-			printf("coalesce_fwd: coalescing %p with %p\n", from, next);
-		#endif
-		*from = (ar_t){16<<16, ((from->flags>>16) * from->cap + (next->flags>>16) * next->cap) / 16 + 1, 0, 0};
-		for (u32 i=0; i<ACACHE_SIZE; i++)
-			if (acache[i] == (ar_t*)next)
-				acache[i] = NULL;
-		_ray_arr_cnt--;
+	memmap_t *map;
+	if (tl_map.ptr && (void*)from >= tl_map.ptr && (void*)from < tl_map.ptr + tl_map.size)
+		map = &tl_map;
+	else if (sh_map.ptr && (void*)from >= sh_map.ptr && (void*)from < sh_map.ptr + sh_map.size)
+		map = &sh_map;
+	else {
+		dloge("%p outside known map bounds!", from);
+		return from;
 	}
+	ar_t *next;
+	ifDBG(u32 cc = 0;)
+	while ((void*)(next = from+arblocks(*from)+1) < map->ptr+map->size && ar_is_free(*next)) {
+		u64 const tbsize = ar_bsize(*from) + ar_bsize(*next) + BS;
+		u32 const elsize = (tbsize + 1) * BS;
+		*from = (ar_t) {elsize << ESO, tbsize / elsize, .fref = NULL};
+		cache_remove(map, next);
+		ifDBG(cc++;)
+	}
+	dlogm("coalesced 1+%u arrays", cc);
 	return from;
 }
 
-void *rayalloc(u64 cap, u64 elsize, bool raw) {
-	if (!elsize)
-		return NULL;
-	#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-		printf("rayalloc: searching aacache for %lu blocks\n", blocks(cap*elsize));
-	#endif
-	for (u32 i=0; i<ACACHE_SIZE && acache[i]; i++) {
-		ar_t *ar = coalesce_fwd(acache[i]);
-		u64 fbl = arblocks(*ar), abl = blocks(cap*elsize);
-		if (abl > fbl)
-			continue;
-		// the free space is good, let's allocated it
-		acache[i] = NULL;
-		if (fbl-abl <= 1) { // slightly extend the new aray to fill free space
-			#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-				printf("rayalloc: extending array to fit free space\n");
-			#endif
-			cap += (fbl-abl)*16/elsize; // bug: may overflow cap
-		}
-		else { // if there is plenty of free space, we simply divide it
-			#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-				printf("rayalloc: cutting from %p\n", ar);
-			#endif
-			ar[1+abl] = (ar_t){16<<16, fbl-abl-1, 0, 0}; // bug: may overflow cap
-			acache_append(ar+abl+1, true);
-			_ray_arr_cnt++;
-		}
-		*ar = (ar_t){AR_USED | (raw? AR_RAW:0) | elsize<<16, cap, 0, 0};
-		return ar->data;
-	}
-	#if defined(DEBUG_RAYALLOC) || !defined(NDEBUG)
-		printf(DBG_INTRO "rayalloc: no suitable entry in aacache\n");
-	#endif
-	raymap_resize((_ray_map_size+sizeof(ar_t)+cap*elsize+PAGE_SIZE-1)/PAGE_SIZE);
-	return rayalloc(cap, elsize, raw);
-}
+ierr ray_config(enum raycfg option, ...) {
+	ierr ret = IERR_BADINPUT;
+	va_list va;
+	va_start(va, option);
+	switch (option) {
+	case rayconf_nop:
+		ret = IERR_OK;
+		break;
 
-void *rayresize(void *ptr, u32 new_cap) {
-	ar_t *ar = ((ar_t*)ptr)-1;
-	if (ar->cap == new_cap)
-		return ptr;
-	#if defined(DEBUG_RAYRESIZE) || !defined(NDEBUG)
-		if ((void*)ar >= _ray_map+_ray_map_size || (void*)ar < _ray_map)
-			printf(DBG_INTRO "rayresize: ptr out of bounds");
-		if (!(ar->flags & AR_USED))
-			printf(DBG_INTRO "rayresize: ptr is free\n");
-	#endif
-	puts("TODO");
-	return ptr;
-}
+	case rayconf_tl_map:
+		ret = map_map(&tl_map, DEFAULT_MAP_SIZE, DEFAULT_MAP_MSIZE, MAP_PRIVATE);
+		break;
 
-void rayfree(void *ptr) {
-	ar_t *ar = ((ar_t*)ptr)-1;
-	#if defined(DEBUG_RAYFREE) || !defined(NDEBUG)
-		if ((void*)ar >= _ray_map+_ray_map_size || (void*)ar < _ray_map)
-			printf(DBG_INTRO "rayfree: ptr out of bounds");
-		if (!(ar->flags & AR_USED))
-			printf(DBG_INTRO "rayfree: ptr is already free\n");
-	#endif
+	case rayconf_sh_map:
+		ret = map_map(&sh_map, DEFAULT_MAP_SIZE, DEFAULT_MAP_MSIZE, MAP_SHARED_VALIDATE);
+		break;
 
-	*ar = (ar_t){16<<16, arblocks(*ar), 0, 0};
-	coalesce_fwd(ar);
-	acache_append((ar_t*)ar, true);
-}
+	case rayconf_tl_map_s:
+		ret = map_map(&tl_map, va_arg(va, u64), DEFAULT_MAP_MSIZE, MAP_PRIVATE);
+		break;
+	
+	case rayconf_sh_map_s:
+		ret = map_map(&sh_map, va_arg(va, u64), DEFAULT_MAP_MSIZE, MAP_SHARED_VALIDATE);
+		break;
 
-ierr raymap_map(u64 size_hint, int add_mmap_flags) {
-	if (_ray_isinit) {
-		#if defined(DEBUG_MAP_MAP) || !defined(NDEBUG)
-			printf(DBG_INTRO "raymap_map: rayalloc is already initialized and mapped at %p\n", _ray_map);
-		#endif
-		return IERR_ALREADY;
-	}
-	_ray_map = mmap(NULL, size_hint?:PAGE_SIZE*64, PROT_READ|PROT_WRITE, add_mmap_flags|MAP_ANONYMOUS|((add_mmap_flags&MAP_SHARED || add_mmap_flags&MAP_SHARED_VALIDATE)?0:MAP_PRIVATE), -1, 0);
-	if (_ray_map == MAP_FAILED) {
-		#if defined(DEBUG_MAP_MAP) || !defined(NDEBUG)
-			perror(DBG_INTRO "raymap_map");
-		#endif
-		_ray_map = NULL;
-		return IERR_CANTMAP;
-	}
-	_ray_map_size = size_hint?:PAGE_SIZE*64;
-	*(ar_t*)_ray_map = (ar_t){16<<16, _ray_map_size/16-1, 0, 0}; // bug: may overflow cap
-	acache_append(_ray_map, true);
-	_ray_arr_cnt = 1;
-	_ray_isinit = true;
-	return IERR_OK;
-}
+	case rayconf_tl_unmap:
+		ret = map_unmap(&tl_map);
+		break;
 
-ierr raymap_resize(u64 new_size) {
-	if (!new_size) {
-		if (_ray_isinit)
-			return raymap_unmap();
-		else {
-			#if defined(DEBUG_MAP_MAP) || !defined(NDEBUG)
-				printf(DBG_INTRO "raymap_resize(0): rayalloc is was not initilized");
-			#endif
-			return IERR_OK;
-		}
-	}
-	if (!_ray_isinit) {
-		#if defined(DEBUG_MAP_MAP) || !defined(NDEBUG)
-			printf(DBG_INTRO "raymap_resize: rayalloc is was not initilized, calling raymap_map now");
-		#endif
-		return raymap_map(new_size, 0);
-	}
-	void *new_map = mremap(_ray_map, _ray_map_size, new_size, 0);
-	if (new_map == MAP_FAILED) {
-		#if defined(DEBUG_MAP_RESIE) || !defined(NDEBUG)
-			perror(DBG_INTRO "raymap_resize");
-		#endif
-		return IERR_CANTREMAP;
-	}
-	_ray_map = new_map;
-	ar_t *newf = _ray_map + _ray_map_size;
-	*newf = (ar_t){16<<16, (new_size-_ray_map_size)/16-1, 0, 0};
-	_ray_map_size = new_size;
-	acache_append(newf, false);
-	return IERR_OK;
-}
+	case rayconf_sh_unmap:
+		ret = map_unmap(&sh_map);
+		break;
 
-ierr raymap_unmap(void) {
-	if (!_ray_isinit) {
-		#if defined(DEBUG_MAP_UNMAP) || !defined(NDEBUG)
-			perror(DBG_INTRO "raymap_unmap: rayalloc was uninitialized");
-		#endif
-		return IERR_ALREADY;
-	}
-	if (munmap(_ray_map, _ray_map_size)) {
-		#if defined(DEBUG_MAP_UNMAP) || !defined(NDEBUG)
-			perror(DBG_INTRO "raymap_unmap");
-		#endif
-		return IERR_CANTUNMAP;
-	}
-	_ray_map_size = 0;
-	_ray_map = NULL;
-	_ray_arr_cnt = 0;
-	_ray_isinit = false;
-	return IERR_OK;
-}
+	case rayconf_tl_set_Msize:
+		tl_map.Msize = va_arg(va, typeof(tl_map.Msize));
+		ret = IERR_OK;
+		break;
 
-void map_dbg_print(void) {
-	if (!_ray_map) {
-		puts("_ray_map = NULL");
-		return;
+	case rayconf_sh_set_Msize:
+		sh_map.Msize = va_arg(va, typeof(sh_map.Msize));
+		ret = IERR_OK;
+
+	case rayconf_tl_get_Msize:
+		*va_arg(va, typeof(tl_map.Msize)*) = tl_map.Msize;
+		ret = IERR_OK;
+		break;
+
+	case rayconf_sh_get_Msize:
+		*va_arg(va, typeof(sh_map.Msize)*) = sh_map.Msize;
+		ret = IERR_OK; 
+		break;
+
+	case rayconf_tl_ptr:
+		*va_arg(va, typeof(tl_map)*) = tl_map;
+		ret = IERR_OK;
+		break;
+	
+	case rayconf_sh_ptr:
+		*va_arg(va, typeof(sh_map)*) = sh_map;
+		ret = IERR_OK;
+		break;
+
+	ifDBG(
+		case rayconf_tl_print:
+			map_dbg_print(&tl_map);
+			ret =IERR_OK;
+			break;
+
+		case rayconf_sh_print:
+			map_dbg_print(&sh_map);
+			ret =IERR_OK;
+			break;
+	)
 	}
-	printf("_ray_map = %p(incl) - %p(excl)\n_ray_map_size = %lu\n_ray_arr_cnt = %lu\n",
-		_ray_map, _ray_map+_ray_map_size, _ray_map_size, _ray_arr_cnt);
-	ar_t *ar= _ray_map;
-	while ((void*)ar < _ray_map+_ray_map_size && (void*)ar >= _ray_map) {
-		char color, *flags, cached=' ';
-		if (ar->flags & AR_USED) {
-			if (ar->flags & AR_RAW)
-				color = '5', flags = "UR";
-			else
-				color = '2', flags = "U";
-		}
-		else if (ar->flags & AR_RAW)
-			color = '1', flags = " R";
-		else
-			color = '6', flags = "";
-		for (u32 j=0; j<ACACHE_SIZE; j++)
-			if (ar == acache[j])
-				cached = '*';
-		printf("\e[3%cm%p\e[33m%c\e[3%cm[\e[1m%-2s\e[22m, elsize=%-3u, cap=%-5u, len=%-4u, ref=%-4u| blk=%lu+1 ]\e[39;49m\n",
-			color, ar, cached, color, flags, ar->flags>>16, ar->cap, ar->len, ar->ref, arblocks(*ar));
-		if (ar_is_zeros(*ar)) {
-			u32 count=0;
-			while ((void*)(++ar) < _ray_map+_ray_map_size && (void*)ar >= _ray_map && ar_is_zeros(*ar))
-				count++;
-			printf("\t\e[36m...%u more all-zeros blocks...\e[39m\n", count);
-		}
-		else
-			ar += arblocks(*ar)+1;
-	}
+	va_end(va);
+	return ret;
 }

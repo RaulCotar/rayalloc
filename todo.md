@@ -1,7 +1,12 @@
 TODO:
 ===
-- update the API section in README
+- find a way to reuse map printing - like small coroutines for memmap_t and ar_t with separate iteration logic for the 2 cases: map_dbg_print and raysnap_print
+- FILES NOT READY:
+	- [map.c] - `map_dbg_print`
+	- [raysnap.c] - all needs redoing
+	- [raymap.c] - all needs redoing
 - write some tests
-- clean up the code
-- transition to the DBG/BC system (also for #include stdio.h)
+- update the API section in README
 - write more docs
+
+## Known bugs
