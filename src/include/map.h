@@ -1,6 +1,7 @@
 #ifndef _MAP_H_
 #define _MAP_H_
 
+#include "api/rayalloc.h"
 #include "array.h"
 
 typedef struct memmap {
@@ -8,6 +9,8 @@ typedef struct memmap {
 	u64 size;
 	u64 Msize;
 	u64 arr_cnt;
+	ar_f *f1;
+	enum ray_ff ff;
 	ar_f *cache[ACACHE_SIZE];
 } memmap_t;
 
@@ -27,9 +30,9 @@ ierr map_unmap(memmap_t *const restrict map);
 void cache_append(memmap_t *const restrict map, ar_f const *ar);
 
 // remove an entry from the acache (if present)
-void cache_remove(memmap_t *const restrict map, ar_f const *ar);
+bool cache_remove(memmap_t *const restrict map, ar_f const *ar);
 
 // combined remove and append
-void cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *new);
+bool cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *new);
 
 #endif /* _MAP_H_ */

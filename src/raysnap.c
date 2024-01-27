@@ -32,8 +32,15 @@ void raysnap_print(raysnap_t const *s, void *f) {
 		fputs("=", f);
 	fprintf(f, "%6lu bytes\e[39m\n", s->byte_size);
 
-	fprintf(f, "\e[90m#\e[39m map = %p(incl) - %p(excl)\n\e[90m#\e[39m map_size = %lu (max: %lu)\n\e[90m#\e[39m arr_cnt = %lu (counted %lu)\n",
-		s->map.ptr, s->map.ptr+s->map.size, s->map.size, s->map.Msize, s->map.arr_cnt, s->ar_cnt);
+	char const *ff;
+	switch (s->map.ff) {
+	case rayFF_CFMF: ff="cfmf"; break;
+	case rayFF_CSMF: ff="csmf"; break;
+	case rayFF_CSMS: ff="csms"; break;
+	}
+
+	fprintf(f, "\e[90m#\e[39m map = %p(incl) - %p(excl)\n\e[90m#\e[39m map_size = %lu (max: %lu)\n\e[90m#\e[39m arr_cnt = %lu (counted %lu)\n\e[90m#\e[39m f1 = %p\tff = %s\n",
+		s->map.ptr, s->map.ptr+s->map.size, s->map.size, s->map.Msize, s->map.arr_cnt, s->ar_cnt, s->map.f1, ff);
 
 	for (u64 i=0, offs=0; i<s->ar_cnt; i++, offs += BS + arblocks(s->arrays[i]) * BS) {
 		char cached = ' ';
@@ -42,11 +49,15 @@ void raysnap_print(raysnap_t const *s, void *f) {
 				cached = '*';
 		if (ar_is_free(s->arrays[i])) {
 			fprintf(f, "\e[90m# \e[36m%p\e[1;33m%c\e[22;36m[\e[1mF%c\e[22m, elsize=%-3u, cap=%-5u, nextf=%p | tblk=%lu ]\e[39m\n",
-				s->map.ptr+offs, cached, ar_is_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, ((ar_f*)s->arrays+i)->nextf, arblocks(s->arrays[i]));
+				s->map.ptr+offs, cached, ar_has_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, ((ar_f*)s->arrays+i)->nextf, arblocks(s->arrays[i]));
+			u32 zc=0;
+			while (ar_is_zeros(*(ar_f*)(s->arrays+i)))
+				zc++, i++;
+			fprintf(f, "\e[90m#\t\e[36mand %u more zero-header arrays...\e[39m\n", zc);
 		}
 		else if (ar_is_raw(s->arrays[i])) {
 			fprintf(f, "\e[90m# \e[35m%p\e[1;33m%c\e[22;35m[\e[1mR%c\e[22m, elsize=%-3u, cap=%-5u | tblk=%lu ]\e[39m\n",
-				s->map.ptr+offs, cached, ar_is_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, arblocks(s->arrays[i]));
+				s->map.ptr+offs, cached, ar_has_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, arblocks(s->arrays[i]));
 		}
 		else {
 			char kind = 'T', c = '1';
@@ -57,7 +68,7 @@ void raysnap_print(raysnap_t const *s, void *f) {
 					kind = 'M', c = '2';
 			}
 			fprintf(f, "\e[90m# \e[3%cm%p\e[1;33m%c\e[22;3%cm[\e[1m%c%c\e[22m, elsize=%-3u, cap=%-5u, len=%-4u, ref=%-4u | tblk=%lu ]\e[39m\n",
-				c, s->map.ptr+offs, cached, c, kind, ar_is_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, ((ar_m*)s->arrays+i)->len, ((ar_m*)s->arrays+i)->ref, arblocks(s->arrays[i]));
+				c, s->map.ptr+offs, cached, c, kind, ar_has_lnf(s->arrays[i])?'f':' ', s->arrays[i].flags>>ESO, s->arrays[i].cap, ((ar_m*)s->arrays+i)->len, ((ar_m*)s->arrays+i)->ref, arblocks(s->arrays[i]));
 
 		}
 	}

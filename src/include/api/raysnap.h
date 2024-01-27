@@ -24,7 +24,7 @@ void raysnap_bin(raysnap_t const *snap, void *file/* FILE* */);
 void raysnap_delete(raysnap_t *snap);
 
 // a combined _snapshot _print _delete for convenience
-// basically a replacement for the rayalloc debug print, but more resource intensive
+// basically a replacement for the rayalloc debug print, but more memory hungry
 void raysnap_quickie(enum raysnap_which const which, void *file/* FILE* */);
 
 #endif /* _API_RAYSNAP_H_ */

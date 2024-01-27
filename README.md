@@ -1,5 +1,7 @@
 RayAlloc - WIP
 ===
+*The project just had a large rewrite, some informations on this page may be outdated.*
+
 Insert explanation of how most allocations are arrays and how that leads to bookkeeping duplication. Introduce rayalloc as a lightweight, 2-in-1 library for memory allocation and dynamic arrays writen in C2X.
 Check out the [docs folder](docs) (empty still) for more in-depth information about the internals. See the [todo list](./todo.md) if you are interested in the near-future plans.
 
@@ -15,20 +17,7 @@ Check out the [docs folder](docs) (empty still) for more in-depth information ab
 
 
 ## Interface
-The interface has 3 parts: the main array interface, the "malloc" one and the debug and profiling stuff. The "malloc" interface is just a very thin wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Here you can see a non-exhautive list of functions and objects:
-function/object | header | description
-:--|:--|:--
-`void *rayalloc(u64 cap, u64 elsize, bool raw)` | [rayalloc.h](src/include/rayalloc.h) | allocate a new array
-`void rayfree(void *ptr)` | [rayalloc.h](src/include/rayalloc.h) | deallocate an array
-`void rayresize(void *ptr)` | [rayalloc.h](src/include/rayalloc.h) | resize a managed array (not implemented yet)
-`void map_dbg_print(void)` | [rayalloc.h](src/include/rayalloc.h) | debug print the state of the allocator, almost identical output to `raysnap_quickie`
-`ierr raymap_map(u64 size_hint, int add_mmap_flags)` | [raylloc.h](src/include/rayalloc.h) | initilize backing memory map
-`ierr raymap_resize(u64 new_size)` | [raylloc.h](src/include/rayalloc.h) | resize backing memory map
-`ierr raymap_unmap(void)` | [raylloc.h](src/include/rayalloc.h) | free backing memory map
-`raysnap_t *raysnap_snapshot(void)` | [raysnap.h](src/include/raysnap.h) | take a snapshot of the allocator state
-`void raysnap_print(raysnap_t const *ss, void *file)` | [raysnap.h](src/include/raysnap.h) | print a raysnap
-`void raysnap_csv(raysnap_t const *ss, void *file)` | [raysnap.h](src/include/raysnap.h) | serialize a raysnap to csv
-`void raysnap_quickie(void *file)` | [raysnap.h](src/include/raysnap.h) | snapshot+print combo, alsmot identical output to `map_print_dbg`
+The interface has 3 parts: the main array interface, the "malloc" one and the debug and profiling stuff. The "malloc" interface is just a very thin wrapper (like 20 SLOC thin) around the array interface for the sake of having a `malloc` replacement. Check the headers for the complete interface. Check out the [interface reference](docs/api_reference.md) for more details.
 
 
 ## Working Principle
@@ -43,11 +32,9 @@ By storing the capacity and element size for each array, they form an implicit l
 
 The every map also has a cache containing `ACACHE_SIZE` entries: pointers to free arrays, in order of most recently used. The acache is good in that it does not require jumping through the entire map (and possibly faulting many pages), but it can quickly get overwhelmed when lots of deallocation happen in quick succession. Coalescing of free arrays is also implemented to merge together neighbouring free arrays.
 
-There are 4 allocation algorithms planned:
-1. **cache first:** choose the first cache entry that has enough space, fall back on either "map first" or "map best".
-2. **map first:** choose the first free array large enough from the map, remap if space is found.
-3. **cache best:** choose the smallest cache entry that fits, fall back on either "map first" or "map best".
-4. **map best:** choose the smallest free array with nough space from the entire map.
+There are 2 allocation algorithms planned for now:
+1. **first:** choose the *first* free array that has enough space; first search the cache, then the entire map if needed.
+2. **smallest:** choose the *smallest* free array that has enough space; first search the cache, then the entire map if needed.
 
 The shared map is shared by all threads. Rayalloc only handles the synchronization of its own actions regaring the allocator data structures (**not implemented yet**). The user should handle rpossible race conditions when accessing shared arrays.
 

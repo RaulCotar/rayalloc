@@ -9,4 +9,4 @@
 -fsanitize=address
 -Og
 -g3
--src/include
+-Isrc/include

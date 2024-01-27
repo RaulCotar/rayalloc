@@ -10,6 +10,7 @@ TEST_TXT := $(patsubst %.c,%.txt,$(wildcard test/[^_]*.c))
 
 .PHONY: quicktest
 quicktest: test/_quick.c $(OBJECTS)
+	echo -e '\n\n'
 	$(CC) $(CFLAGS) $^ -o test/_quick.bin
 	./test/_quick.bin
 

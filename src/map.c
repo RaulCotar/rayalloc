@@ -3,6 +3,9 @@
 #include "map.h"
 #include "config.h"
 
+thread_local memmap_t tl_map;
+memmap_t sh_map;
+
 ierr map_map(memmap_t *const restrict map, u64 size, u64 Msize, int mf) {
 	if (map->ptr) {
 		dlogw("map already exists at %p", map->ptr);
@@ -19,9 +22,11 @@ ierr map_map(memmap_t *const restrict map, u64 size, u64 Msize, int mf) {
 		map->ptr = NULL;
 		return IERR_CANTMAP;
 	}
-	*map = (memmap_t) {map->ptr, size, Msize, 1, {map->ptr}};
-	u16 const elsize = size / UINT32_MAX + 1;
-	*(ar_f*)map->ptr = (ar_f) {elsize<<ESO, (size-1+elsize)/elsize, NULL};
+	*map = (memmap_t) {map->ptr, size, Msize, 1, map->ptr, DEFAULT_FF_ALGO, {map->ptr}};
+	u16 const elsize = ar_calc_good_es(size);
+	*(ar_f*)map->ptr = (ar_f) {elsize<<ESO, (size-1+elsize)/elsize, .nextf=NULL};
+	*ar_get_foot(map->ptr) = *(ar_f*)map->ptr;
+	ar_get_foot(map->ptr)->flags |= AR_K_FOOT;
 	return IERR_OK;
 }
 
@@ -34,7 +39,7 @@ ierr map_unmap(memmap_t *const restrict map) {
 		dloge("munmap failed with errno %d", errno);
 		return IERR_CANTUNMAP;
 	}
-	*map = (memmap_t) {NULL, 0, 0, 0, {}};
+	*map = (memmap_t) {NULL, 0, 0, 0, NULL, DEFAULT_FF_ALGO, {}};
 	for (i32 i=0; i<ACACHE_SIZE; i++)
 		map->cache[i] = NULL;
 	return IERR_OK;
@@ -55,7 +60,7 @@ void cache_append(memmap_t *const restrict map, ar_f const *ar) {
 	map->cache[0] = (ar_f*)ar;
 }
 
-void cache_remove(memmap_t *const restrict map, ar_f const *ar) {
+bool cache_remove(memmap_t *const restrict map, ar_f const *ar) {
 	ifDBG(
 		if (!ar)
 			dlogw("array is NULL!");
@@ -67,11 +72,12 @@ void cache_remove(memmap_t *const restrict map, ar_f const *ar) {
 			while (i++ < ACACHE_SIZE)
 				map->cache[i-1] = map->cache[i];
 			map->cache[ACACHE_SIZE-1] = NULL;
-			return;
+			return true;
 		}
+	return false;
 }
 
-void cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *new) {
+bool cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *new) {
 	ifDBG(
 		if ((void*)new >= map->ptr+map->size || (void*)new < map->ptr)
 			dlogw("%p (new) out of bounds!", new);
@@ -89,7 +95,8 @@ void cache_replace(memmap_t *const restrict map, ar_f const *old, ar_f const *ne
 			while (--i)
 				map->cache[i] = map->cache[i-1];
 			map->cache[0] = (ar_f*)new;
-			return;
+			return true;
 		}
 	dlogm("%p (old) was not found, %p (new) was not inserted", old ,new);
+	return false;
 }

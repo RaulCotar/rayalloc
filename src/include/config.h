@@ -25,6 +25,10 @@
 #define DEFAULT_MAP_MSIZE ((u64)2<<32) // for testing, otherwise -1
 #endif
 
+#ifndef DEFAULT_FF_ALGO
+#define DEFAULT_FF_ALGO rayFF_CSMF
+#endif
+
 #ifndef DLOG_FMTM
 #define DLOG_FMTM "\e[94;1m %s>\e[39;22m "
 #endif
