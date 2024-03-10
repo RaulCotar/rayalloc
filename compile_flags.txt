@@ -1,12 +1,14 @@
 -std=c2x
 -Wall
 -Wextra
+-Wpedantic
 -Wno-gnu-zero-variadic-macro-arguments
 -Wno-gnu-pointer-arith
--fpic
+-Wno-attributes
 -fno-omit-frame-pointer
 -fsanitize=undefined
 -fsanitize=address
+#-flto=auto
+-DVERSION="unknown"
 -Og
--g3
--Isrc/include
+-ggdb3

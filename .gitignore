@@ -2,6 +2,5 @@
 *.a
 *.so
 *.bin
+*.log
 build/*
-test/*.bin
-test/*.log
