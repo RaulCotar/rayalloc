@@ -5,7 +5,7 @@ __RayAlloc__ is a 2-in-1 library that provides a heap allocator and a dynamic ar
 
 Current version is `0.0.5-dev`.  
 More detailed documentation will become available when the library is more complete.  
-Run `make help` (nice help message) then `ADDCLFAGS=-Wno-pedantic` to get started.
+Run `make help` (nice help message) then `make ADDCLFAGS=-Wno-pedantic` to get started.
 
 ## What's working
 - `memalloc`/`memfree` for buckets and maps
