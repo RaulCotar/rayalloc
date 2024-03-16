@@ -1,6 +1,7 @@
-*.o
 *.a
+*.o
 *.so
 *.bin
 *.log
+*.out
 build/*

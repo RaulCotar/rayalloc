@@ -1,5 +1,5 @@
-#ifndef _TYPEDEFS_H_
-#define _TYPEDEFS_H_
+#ifndef _INCLUDE_TYPEDEFS_H_
+#define _INCLUDE_TYPEDEFS_H_
 #include <stdint.h>
 
 typedef uint64_t u64;
@@ -19,4 +19,4 @@ typedef signed __int128 i128;
 #define uN(N) (unsigned _BitInt((N)))
 #define iN(N) (signed _BitInt((N)))
 
-#endif /* _TYPEDEFS_H_ */
+#endif /* _INCLUDE_TYPEDEFS_H_ */

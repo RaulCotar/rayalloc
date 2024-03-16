@@ -15,14 +15,8 @@
 
 #define roundToMult(uint_A, uint_B) (((((uint_A)?:1)-1)/(uint_B)+1)*(uint_B))
 
-
-// mmap stuff
-
-#define PROT_RW (PROT_READ|PROT_WRITE)
-#define MAP_ANONPRIV (MAP_ANONYMOUS|MAP_PRIVATE)
-#ifndef MAP_UNINITIALIZED
-	#define MAP_UNINITIALIZED 0
+#if NEED_BUILTINS == true
+int __builtin_ffs(int const x);
 #endif
-
 
 #endif /* _UTIL_H_ */

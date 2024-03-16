@@ -5,10 +5,12 @@
 -Wno-gnu-zero-variadic-macro-arguments
 -Wno-gnu-pointer-arith
 -Wno-attributes
+-fpic
 -fno-omit-frame-pointer
 -fsanitize=undefined
 -fsanitize=address
 #-flto=auto
--DVERSION="unknown"
+-DVERSION="version"
+-DVERBOSE=false
 -Og
 -ggdb3

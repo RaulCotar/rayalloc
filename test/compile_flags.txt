@@ -1,0 +1,3 @@
+-Ibuild
+# Below is for clangd
+-I../build
